@@ -14,20 +14,20 @@ Dette er allerede gjort (oktober 2026):
   er kjørt)
 - ✅ Prosjekt-URL og publishable-nøkkel er limt inn i `godtestopp.html`
 
-## Gjenstår (2 steg)
+Og hosting:
 
-### 1. Sett innloggingsadressen
-Når du vet hvor appen skal ligge (f.eks. `https://dinside.no/godtestopp.html`):
-1. Gå til [Authentication → URL Configuration](https://supabase.com/dashboard/project/uhjphrkerasveybgonyv/auth/url-configuration)
-2. Sett **Site URL** til den adressen, og legg den også til under
-   **Redirect URLs**
+- ✅ Appen er live på **https://godtestopp.andreaswinther.no** via GitHub
+  Pages (dette repoet, `index.html` på `main`)
+- ✅ CNAME-post hos one.com: `godtestopp` → `andreaswint.github.io`
+- ✅ Site URL i Supabase: `https://godtestopp.andreaswinther.no`
 
-Uten dette peker innloggingslenkene i e-postene til feil adresse
-(standard er `http://localhost:3000`).
+## Gjenstår
 
-### 2. Last opp
-Last opp `godtestopp.html` til webhotellet ditt (eller Netlify/Vercel/GitHub
-Pages). Ferdig!
+- Når GitHub har utstedt HTTPS-sertifikatet (15–60 min etter oppsett),
+  huk av **Enforce HTTPS** under repoets Settings → Pages
+- Supabase sender maks ca. 2 innloggingse-poster i timen med innebygd
+  utsending — be familien logge inn litt spredt, eller koble til egen SMTP
+  under Authentication → Emails
 
 > Nøkkelen i HTML-fila er en «publishable key» — laget for å være offentlig.
 > Row Level Security i databasen sørger for at hver bruker kun får tilgang
