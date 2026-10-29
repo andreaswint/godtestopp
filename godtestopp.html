@@ -1,0 +1,821 @@
+<!doctype html>
+<html lang="no">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Godtestopp</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700;800&display=swap">
+<style>
+/* Layout: one warm, rounded app column — a pocket coach, not a dashboard. */
+:root{
+  --bg: #f3f6f1;
+  --surface: #ffffff;
+  --surface-2: #eaf2ea;
+  --ink: #22302a;
+  --muted: #5f7066;
+  --accent: #2f9e63;
+  --accent-soft: #d9efe2;
+  --accent-ink: #ffffff;
+  --gold: #e9a23b;
+  --gold-soft: #fbeed7;
+  --slip: #c98a3e;
+  --slip-soft: #f7ecdd;
+  --line: #dde5dd;
+  --ring-track: #e3ebe3;
+  --shadow: 0 10px 30px rgba(34,48,42,.08);
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#111a14; --surface:#1a241d; --surface-2:#212d24;
+    --ink:#e8f0e9; --muted:#9db3a4;
+    --accent:#4cc488; --accent-soft:#1f3b2c; --accent-ink:#0c130e;
+    --gold:#f0b95c; --gold-soft:#3a2f1a;
+    --slip:#dca45e; --slip-soft:#352a1a;
+    --line:#2b372e; --ring-track:#273229;
+    --shadow: 0 10px 30px rgba(0,0,0,.35);
+    color-scheme: dark;
+  }
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  background:var(--bg); color:var(--ink);
+  font-family:'Nunito', system-ui, -apple-system, sans-serif;
+  font-size:16px; line-height:1.5;
+  padding-left:max(16px, env(safe-area-inset-left, 0px));
+  padding-right:max(16px, env(safe-area-inset-right, 0px));
+  padding-top:env(safe-area-inset-top, 0px);
+  padding-bottom:env(safe-area-inset-bottom, 0px);
+}
+img{max-width:100%}
+[hidden]{display:none!important}
+.wrap{max-width:540px; margin:0 auto; padding-block:28px 48px; display:flex; flex-direction:column; gap:18px}
+header.app{ text-align:center; }
+h1{
+  font-family:'Fredoka', 'Nunito', sans-serif; font-weight:700;
+  font-size:2rem; margin:0; letter-spacing:.5px; text-wrap:balance;
+}
+h1 .dot{color:var(--accent)}
+.tagline{margin:.1rem 0 0; color:var(--muted); font-size:.95rem}
+h2{
+  font-family:'Fredoka', 'Nunito', sans-serif; font-weight:600;
+  font-size:1.05rem; margin:0 0 10px; letter-spacing:.3px;
+}
+.card{
+  background:var(--surface); border:1px solid var(--line);
+  border-radius:20px; padding:20px; box-shadow:var(--shadow);
+}
+.muted{color:var(--muted)}
+button{font-family:inherit}
+
+/* Login / sync card */
+.login h2{margin-bottom:4px}
+.login p{margin:0 0 12px; font-size:.9rem; color:var(--muted)}
+.field{display:flex; gap:8px; flex-wrap:wrap}
+.field input{
+  flex:1; min-width:0; border:2px solid var(--line); border-radius:999px;
+  padding:11px 16px; font-family:inherit; font-size:1rem;
+  background:var(--surface); color:var(--ink);
+}
+.field input:focus-visible{outline:none; border-color:var(--accent)}
+.login .localline{margin:12px 0 0; font-size:.85rem}
+.login .localline button{
+  background:none; border:none; padding:0; color:var(--muted);
+  text-decoration:underline; cursor:pointer; font-size:.85rem;
+}
+.login-msg{margin:10px 0 0 !important; font-weight:700; color:var(--accent) !important}
+.login-msg.err{color:var(--slip) !important}
+.account-line{
+  display:flex; justify-content:center; align-items:center; gap:10px;
+  font-size:.8rem; color:var(--muted); flex-wrap:wrap; text-align:center;
+}
+.account-line button{
+  background:none; border:none; padding:0; color:var(--muted);
+  text-decoration:underline; cursor:pointer; font-size:.8rem;
+}
+
+/* Hero: streak ring + today's actions */
+.hero{display:flex; flex-direction:column; align-items:center; gap:14px; padding-block:26px}
+.ring-wrap{position:relative; width:190px; height:190px}
+.ring-wrap svg{width:100%; height:100%; transform:rotate(-90deg)}
+.ring-track{fill:none; stroke:var(--ring-track); stroke-width:13}
+.ring-fill{fill:none; stroke:var(--accent); stroke-width:13; stroke-linecap:round; transition:stroke-dashoffset .7s cubic-bezier(.22,1,.36,1)}
+.ring-center{position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:0}
+.streak-num{
+  font-family:'Fredoka', sans-serif; font-weight:700; font-size:3.2rem; line-height:1;
+  font-variant-numeric: tabular-nums;
+}
+.streak-label{font-size:.8rem; color:var(--muted); font-weight:700; text-transform:uppercase; letter-spacing:.08em}
+.ring-goal{font-size:.8rem; color:var(--muted); margin-top:4px}
+#cheer{margin:0; text-align:center; font-weight:600; max-width:38ch; text-wrap:balance}
+.actions{display:flex; flex-wrap:wrap; gap:10px; justify-content:center; width:100%}
+.btn{
+  border:none; border-radius:999px; padding:13px 22px; font-size:1rem; font-weight:800;
+  cursor:pointer; transition:transform .12s ease, filter .12s ease;
+}
+.btn:active{transform:scale(.96)}
+.btn:focus-visible{outline:3px solid var(--accent); outline-offset:2px}
+.btn-free{background:var(--accent); color:var(--accent-ink)}
+.btn-free:hover{filter:brightness(1.06)}
+.btn-free[disabled]{opacity:.55; cursor:default}
+.btn-slip{background:transparent; color:var(--muted); border:2px solid var(--line); font-weight:700}
+.btn-slip:hover{border-color:var(--slip); color:var(--slip)}
+#todayState{margin:0; font-size:.9rem; text-align:center}
+
+/* Stat tiles */
+.stats{display:grid; grid-template-columns:repeat(3,1fr); gap:10px}
+.stat{
+  background:var(--surface); border:1px solid var(--line); border-radius:16px;
+  padding:14px 10px; text-align:center;
+}
+.stat b{
+  display:block; font-family:'Fredoka',sans-serif; font-weight:700; font-size:1.6rem;
+  font-variant-numeric:tabular-nums;
+}
+.stat span{font-size:.74rem; color:var(--muted); font-weight:700; text-transform:uppercase; letter-spacing:.06em}
+
+/* Level + XP */
+.level-row{display:flex; align-items:baseline; justify-content:space-between; gap:10px; flex-wrap:wrap}
+.level-name{font-family:'Fredoka',sans-serif; font-weight:600; font-size:1.15rem}
+.level-xp{font-size:.85rem; color:var(--muted); font-variant-numeric:tabular-nums}
+.xpbar{height:12px; background:var(--surface-2); border-radius:999px; overflow:hidden; margin-top:10px}
+.xpbar-fill{height:100%; background:linear-gradient(90deg, var(--accent), var(--gold)); border-radius:999px; transition:width .7s cubic-bezier(.22,1,.36,1)}
+.level-next{margin:8px 0 0; font-size:.85rem; color:var(--muted)}
+
+/* Badges */
+.badge-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:10px}
+.badge{
+  display:flex; flex-direction:column; align-items:center; gap:4px; text-align:center;
+  background:var(--surface-2); border-radius:16px; padding:12px 8px;
+  border:1px solid transparent;
+}
+.badge .em{font-size:1.7rem; line-height:1}
+.badge .nm{font-size:.78rem; font-weight:800}
+.badge .ds{font-size:.68rem; color:var(--muted); line-height:1.3}
+.badge.locked{opacity:.38; filter:grayscale(.8)}
+.badge.unlocked{background:var(--gold-soft); border-color:var(--gold)}
+
+/* Calendar */
+.cal-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:10px}
+.cal-title{font-family:'Fredoka',sans-serif; font-weight:600; font-size:1.05rem; text-transform:capitalize}
+.cal-nav{display:flex; gap:6px}
+.cal-nav button{
+  width:34px; height:34px; border-radius:10px; border:1px solid var(--line);
+  background:var(--surface); color:var(--ink); font-size:1rem; cursor:pointer;
+}
+.cal-nav button:hover{background:var(--surface-2)}
+.cal-grid{display:grid; grid-template-columns:repeat(7,1fr); gap:4px}
+.dow{text-align:center; font-size:.7rem; font-weight:800; color:var(--muted); text-transform:uppercase; padding-block:4px}
+.day{
+  aspect-ratio:1; border:none; background:transparent; border-radius:12px;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px;
+  font-size:.85rem; font-weight:700; color:var(--ink); cursor:pointer; padding:0;
+  font-variant-numeric:tabular-nums;
+}
+.day:hover:not([disabled]){background:var(--surface-2)}
+.day[disabled]{color:var(--muted); opacity:.4; cursor:default}
+.day.other{visibility:hidden}
+.day.today{box-shadow:inset 0 0 0 2px var(--accent)}
+.day.free{background:var(--accent); color:var(--accent-ink)}
+.day.free:hover{background:var(--accent); filter:brightness(1.07)}
+.day.slip{background:var(--slip-soft); color:var(--slip); box-shadow:inset 0 0 0 1.5px var(--slip)}
+.day .mk{font-size:.6rem; line-height:1; height:.7em}
+.legend{display:flex; gap:16px; margin-top:12px; font-size:.78rem; color:var(--muted); flex-wrap:wrap}
+.legend i{display:inline-block; width:11px; height:11px; border-radius:4px; margin-right:5px; vertical-align:-1px}
+.legend .l-free{background:var(--accent)}
+.legend .l-slip{background:var(--slip-soft); box-shadow:inset 0 0 0 1.5px var(--slip)}
+
+#storageNote{font-size:.8rem; text-align:center; margin:0}
+
+/* Modals + toast */
+.overlay{
+  position:fixed; inset:0; background:rgba(15,22,17,.45); z-index:50;
+  display:flex; align-items:center; justify-content:center;
+  padding-left:max(16px, env(safe-area-inset-left, 0px));
+  padding-right:max(16px, env(safe-area-inset-right, 0px));
+  padding-block:20px;
+}
+.sheet{
+  background:var(--surface); border-radius:20px; padding:24px; max-width:360px; width:100%;
+  box-shadow:var(--shadow); text-align:center; display:flex; flex-direction:column; gap:12px;
+}
+.sheet h3{font-family:'Fredoka',sans-serif; font-weight:600; margin:0; font-size:1.15rem; text-wrap:balance}
+.sheet p{margin:0; color:var(--muted)}
+.sheet .big-em{font-size:2.6rem; line-height:1}
+.sheet-btns{display:flex; flex-direction:column; gap:8px}
+.sheet-btns .btn{width:100%}
+.btn-ghost{background:transparent; border:2px solid var(--line); color:var(--muted); font-weight:700}
+.btn-ghost:hover{border-color:var(--muted)}
+.btn-slipfill{background:var(--slip-soft); color:var(--slip); font-weight:800}
+#toast{
+  position:fixed; left:50%; transform:translateX(-50%);
+  bottom:calc(24px + env(safe-area-inset-bottom, 0px));
+  background:var(--ink); color:var(--bg); padding:11px 20px; border-radius:999px;
+  font-weight:800; font-size:.95rem; z-index:60; box-shadow:var(--shadow);
+  max-width:min(90vw, 420px); text-align:center;
+}
+#confettiCanvas{position:fixed; inset:0; pointer-events:none; z-index:70}
+@media (prefers-reduced-motion: reduce){
+  *{transition:none !important; animation:none !important}
+}
+@media (max-width: 420px){
+  .badge-grid{grid-template-columns:repeat(3,1fr)}
+  .stats{gap:8px}
+  .stat b{font-size:1.35rem}
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="app">
+    <h1>Godtestopp<span class="dot">.</span></h1>
+    <p class="tagline">Små seire, én dag om gangen</p>
+  </header>
+
+  <section class="card login" id="loginCard" hidden>
+    <h2>Logg inn for å synkronisere</h2>
+    <p>Skriv inn e-posten din, så får du en innloggingslenke. Ingen passord — og loggen din er helt privat.</p>
+    <div class="field">
+      <input type="email" id="emailInput" placeholder="din@epost.no" autocomplete="email" inputmode="email">
+      <button class="btn btn-free" id="btnSendLink">Send lenke</button>
+    </div>
+    <p class="login-msg" id="loginMsg" hidden></p>
+    <p class="localline">…eller <button type="button" id="btnLocalOnly">fortsett uten konto</button> (lagres kun i denne nettleseren)</p>
+  </section>
+
+  <section class="card hero" aria-label="Dagens status">
+    <div class="ring-wrap">
+      <svg viewBox="0 0 190 190" aria-hidden="true">
+        <circle class="ring-track" cx="95" cy="95" r="82"></circle>
+        <circle class="ring-fill" id="ringFill" cx="95" cy="95" r="82"></circle>
+      </svg>
+      <div class="ring-center">
+        <div class="streak-num" id="streakNum">0</div>
+        <div class="streak-label">dager på rad</div>
+        <div class="ring-goal" id="ringGoal"></div>
+      </div>
+    </div>
+    <p id="cheer">Velkommen! Trykk på knappen under når du har hatt en godtefri dag.</p>
+    <div class="actions">
+      <button class="btn btn-free" id="btnFree">I dag var godtefri&nbsp;🎉</button>
+      <button class="btn btn-slip" id="btnSlip">Jeg sprakk i dag</button>
+    </div>
+    <p id="todayState" class="muted"></p>
+  </section>
+
+  <section class="stats" aria-label="Statistikk">
+    <div class="stat"><b id="statTotal">0</b><span>godtefrie dager</span></div>
+    <div class="stat"><b id="statBest">0</b><span>lengste rekke</span></div>
+    <div class="stat"><b id="statXp">0</b><span>poeng</span></div>
+  </section>
+
+  <section class="card" aria-label="Nivå">
+    <div class="level-row">
+      <span class="level-name" id="levelName">Nysgjerrig</span>
+      <span class="level-xp" id="levelXp"></span>
+    </div>
+    <div class="xpbar"><div class="xpbar-fill" id="xpFill" style="width:0%"></div></div>
+    <p class="level-next" id="levelNext"></p>
+  </section>
+
+  <section class="card" aria-label="Merker">
+    <h2>Merker</h2>
+    <div class="badge-grid" id="badgeGrid"></div>
+  </section>
+
+  <section class="card" aria-label="Kalender">
+    <div class="cal-head">
+      <span class="cal-title" id="calTitle"></span>
+      <div class="cal-nav">
+        <button id="calPrev" aria-label="Forrige måned">‹</button>
+        <button id="calNext" aria-label="Neste måned">›</button>
+      </div>
+    </div>
+    <div class="cal-grid" id="calGrid"></div>
+    <div class="legend">
+      <span><i class="l-free"></i>Godtefri</span>
+      <span><i class="l-slip"></i>Sprekk</span>
+      <span class="muted">Trykk på en dag for å registrere bakover i tid</span>
+    </div>
+  </section>
+
+  <p id="storageNote" class="muted" hidden>Lagres kun i denne nettleseren akkurat nå.</p>
+  <div class="account-line" id="accountLine" hidden>
+    <span id="accountEmail"></span>
+    <button type="button" id="btnLogout">Logg ut</button>
+  </div>
+</div>
+
+<div class="overlay" id="dayModal" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="dayModalTitle">
+    <h3 id="dayModalTitle"></h3>
+    <div class="sheet-btns">
+      <button class="btn btn-free" id="dmFree">Godtefri dag 🎉</button>
+      <button class="btn btn-slipfill" id="dmSlip">Det ble en sprekk</button>
+      <button class="btn btn-ghost" id="dmClear">Fjern registrering</button>
+      <button class="btn btn-ghost" id="dmCancel">Avbryt</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="slipModal" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="slipTitle">
+    <div class="big-em">🤝</div>
+    <h3 id="slipTitle">Registrert — og godt jobbet med ærligheten</h3>
+    <p id="slipMsg"></p>
+    <p class="muted" style="font-size:.85rem" id="slipXpNote">+2 poeng for ærlighet</p>
+    <div class="sheet-btns">
+      <button class="btn btn-free" id="slipOk">Ny start i morgen 💪</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" hidden></div>
+<canvas id="confettiCanvas" hidden></canvas>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.50.0/dist/umd/supabase.js"></script>
+<script>
+(function(){
+"use strict";
+
+/* ====================================================================
+   KONFIGURASJON — lim inn verdiene fra ditt Supabase-prosjekt her.
+   Du finner dem under Project Settings → API i Supabase-dashbordet.
+   (Anon-nøkkelen er laget for å være offentlig; Row Level Security
+   beskytter dataene.)
+==================================================================== */
+const SUPABASE_URL = 'https://uhjphrkerasveybgonyv.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_RyHi0ZF2tCyRS5fuzGkzbQ_bqF7uEQE';
+/* ==================================================================== */
+
+const $ = id => document.getElementById(id);
+
+/* ---------- date helpers ---------- */
+const pad = n => String(n).padStart(2,'0');
+const keyOf = d => d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate());
+const parseKey = k => { const [y,m,dd] = k.split('-').map(Number); return new Date(y, m-1, dd); };
+const addDays = (d,n) => { const x = new Date(d); x.setDate(x.getDate()+n); return x; };
+const todayKey = () => keyOf(new Date());
+const MONTHS = ['januar','februar','mars','april','mai','juni','juli','august','september','oktober','november','desember'];
+const WEEKDAYS = ['søndag','mandag','tirsdag','onsdag','torsdag','fredag','lørdag'];
+const DOW = ['ma','ti','on','to','fr','lø','sø'];
+function humanDate(k){
+  const d = parseKey(k);
+  return WEEKDAYS[d.getDay()] + ' ' + d.getDate() + '. ' + MONTHS[d.getMonth()];
+}
+
+/* ---------- state ---------- */
+let days = {};            // "YYYY-MM-DD" -> {status:"free"|"slip"}
+let mode = 'loading';     // 'loading' | 'cloud' | 'local'
+let sb = null;            // Supabase client
+let session = null;
+let pendingWrites = [];   // [dateKey, status|null] queued before storage resolves
+let viewYear, viewMonth;
+{ const n = new Date(); viewYear = n.getFullYear(); viewMonth = n.getMonth(); }
+const LS_KEY = 'godtestopp.days.v1';
+
+/* ---------- gamification config ---------- */
+const XP_FREE = 10, XP_SLIP = 2;
+const LEVELS = [
+  {xp:0,    name:'Nysgjerrig'},
+  {xp:30,   name:'Godt i gang'},
+  {xp:80,   name:'Stødig kurs'},
+  {xp:160,  name:'Viljestyrke'},
+  {xp:280,  name:'Jernvilje'},
+  {xp:450,  name:'Sukkertemmer'},
+  {xp:700,  name:'Godtemester'},
+  {xp:1100, name:'Legende'}
+];
+const MILESTONES = [3,7,14,21,30,50,75,100,150,200,365];
+const BADGES = [
+  {id:'first',    em:'🌱', nm:'Første dag',  ds:'Din første godtefrie dag',        test:s=>s.totalFree>=1},
+  {id:'streak3',  em:'🔥', nm:'3 på rad',    ds:'Tre godtefrie dager på rad',       test:s=>s.bestStreak>=3},
+  {id:'streak7',  em:'⭐', nm:'Hel uke',     ds:'Sju dager på rad',                 test:s=>s.bestStreak>=7},
+  {id:'streak14', em:'🏅', nm:'To uker',     ds:'Fjorten dager på rad',             test:s=>s.bestStreak>=14},
+  {id:'streak30', em:'🏆', nm:'En måned',    ds:'Tretti dager på rad',              test:s=>s.bestStreak>=30},
+  {id:'total50',  em:'💎', nm:'50 dager',    ds:'Femti godtefrie dager totalt',     test:s=>s.totalFree>=50},
+  {id:'total100', em:'👑', nm:'100-klubben', ds:'Hundre godtefrie dager totalt',    test:s=>s.totalFree>=100},
+  {id:'honest',   em:'🤝', nm:'Ærlig talt',  ds:'Logget en sprekk — det krever mot', test:s=>s.totalSlips>=1},
+  {id:'comeback', em:'💪', nm:'Comeback',    ds:'Godtefri dagen etter en sprekk',   test:s=>s.comeback}
+];
+const SLIP_MESSAGES = [
+  'Helt greit. Én dag definerer deg ikke — rekorden din står fortsatt.',
+  'En sprekk er data, ikke nederlag. Nå vet du mer om hva som trigger deg.',
+  'Du er ærlig med deg selv, og det er faktisk den viktigste vanen av alle.',
+  'Alle som har klart en lang godtestopp har sprukket underveis. Alle.',
+  'I morgen er et blankt ark. Totalen din teller fortsatt alt du har klart.'
+];
+const CHEERS_ACTIVE = [
+  'Sterkt jobbet — kroppen din merker forskjellen! 💚',
+  'Du bygger en vane, dag for dag. Fortsett sånn!',
+  'Imponerende rekke! Hold blikket på neste milepæl.',
+  'Godteskuffen har gitt opp å friste deg. 😄'
+];
+
+/* ---------- derived stats ---------- */
+function computeStats(){
+  let totalFree = 0, totalSlips = 0, comeback = false;
+  const freeSet = new Set();
+  for (const k in days){
+    if (days[k].status === 'free'){ totalFree++; freeSet.add(k); }
+    else if (days[k].status === 'slip'){ totalSlips++; }
+  }
+  for (const k of freeSet){
+    const prev = keyOf(addDays(parseKey(k), -1));
+    if (days[prev] && days[prev].status === 'slip'){ comeback = true; break; }
+  }
+  let cur = 0;
+  let cursor = new Date();
+  if (!days[todayKey()]) cursor = addDays(cursor, -1);
+  while (true){
+    const k = keyOf(cursor);
+    if (days[k] && days[k].status === 'free'){ cur++; cursor = addDays(cursor, -1); }
+    else break;
+  }
+  let best = cur;
+  const sorted = [...freeSet].sort();
+  let run = 0, prevKey = null;
+  for (const k of sorted){
+    if (prevKey && keyOf(addDays(parseKey(prevKey), 1)) === k) run++;
+    else run = 1;
+    if (run > best) best = run;
+    prevKey = k;
+  }
+  const xp = totalFree * XP_FREE + totalSlips * XP_SLIP;
+  return { totalFree, totalSlips, comeback, currentStreak: cur, bestStreak: best, xp };
+}
+function levelFor(xp){
+  let i = 0;
+  while (i + 1 < LEVELS.length && xp >= LEVELS[i+1].xp) i++;
+  return i;
+}
+function unlockedBadges(stats){
+  return new Set(BADGES.filter(b => b.test(stats)).map(b => b.id));
+}
+
+/* ---------- rendering ---------- */
+const CIRC = 2 * Math.PI * 82;
+function render(){
+  const s = computeStats();
+  const tk = todayKey();
+  const todayEntry = days[tk];
+
+  const next = MILESTONES.find(m => m > s.currentStreak) || (s.currentStreak + 50);
+  const frac = Math.min(1, s.currentStreak / next);
+  const ring = $('ringFill');
+  ring.style.strokeDasharray = CIRC;
+  ring.style.strokeDashoffset = CIRC * (1 - frac);
+  $('streakNum').textContent = s.currentStreak;
+  $('ringGoal').textContent = s.currentStreak > 0 ? ('neste mål: ' + next) : 'neste mål: ' + MILESTONES[0];
+
+  const cheer = $('cheer');
+  if (todayEntry && todayEntry.status === 'slip'){
+    cheer.textContent = 'I dag ble en sprekk — helt greit. I morgen er et blankt ark. 💚';
+  } else if (s.currentStreak === 0 && s.totalFree === 0){
+    cheer.textContent = 'Velkommen! Trykk på knappen under når du har hatt en godtefri dag.';
+  } else if (s.currentStreak === 0){
+    cheer.textContent = 'Klar for en ny start? Første dag i en ny rekke er den viktigste.';
+  } else {
+    cheer.textContent = CHEERS_ACTIVE[s.currentStreak % CHEERS_ACTIVE.length];
+  }
+
+  const btnFree = $('btnFree');
+  const stateEl = $('todayState');
+  if (todayEntry && todayEntry.status === 'free'){
+    btnFree.disabled = true;
+    btnFree.textContent = 'Registrert i dag ✓';
+    stateEl.textContent = 'Godtefri dag registrert. Vi sees i morgen!';
+  } else if (todayEntry && todayEntry.status === 'slip'){
+    btnFree.disabled = false;
+    btnFree.textContent = 'I dag var godtefri 🎉';
+    stateEl.textContent = 'Sprekk registrert i dag. Du kan endre det via kalenderen.';
+  } else {
+    btnFree.disabled = false;
+    btnFree.textContent = 'I dag var godtefri 🎉';
+    stateEl.textContent = '';
+  }
+
+  $('statTotal').textContent = s.totalFree;
+  $('statBest').textContent = s.bestStreak;
+  $('statXp').textContent = s.xp;
+
+  const li = levelFor(s.xp);
+  const cur = LEVELS[li];
+  const nxt = LEVELS[li+1] || null;
+  $('levelName').textContent = 'Nivå ' + (li+1) + ' · ' + cur.name;
+  $('levelXp').textContent = s.xp + ' XP';
+  if (nxt){
+    const span = nxt.xp - cur.xp;
+    const into = s.xp - cur.xp;
+    $('xpFill').style.width = Math.round(100 * into / span) + '%';
+    $('levelNext').textContent = (nxt.xp - s.xp) + ' XP til «' + nxt.name + '»';
+  } else {
+    $('xpFill').style.width = '100%';
+    $('levelNext').textContent = 'Høyeste nivå — du er en legende! 👑';
+  }
+
+  const unlocked = unlockedBadges(s);
+  const grid = $('badgeGrid');
+  grid.textContent = '';
+  for (const b of BADGES){
+    const el = document.createElement('div');
+    el.className = 'badge ' + (unlocked.has(b.id) ? 'unlocked' : 'locked');
+    const em = document.createElement('div'); em.className = 'em'; em.textContent = b.em;
+    const nm = document.createElement('div'); nm.className = 'nm'; nm.textContent = b.nm;
+    const ds = document.createElement('div'); ds.className = 'ds'; ds.textContent = b.ds;
+    el.append(em, nm, ds);
+    grid.appendChild(el);
+  }
+
+  renderCalendar();
+}
+
+function renderCalendar(){
+  $('calTitle').textContent = MONTHS[viewMonth] + ' ' + viewYear;
+  const grid = $('calGrid');
+  grid.textContent = '';
+  for (const d of DOW){
+    const h = document.createElement('div'); h.className = 'dow'; h.textContent = d;
+    grid.appendChild(h);
+  }
+  const first = new Date(viewYear, viewMonth, 1);
+  const lead = (first.getDay() + 6) % 7;
+  const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+  const tk = todayKey();
+  for (let i = 0; i < lead; i++){
+    const b = document.createElement('button'); b.className = 'day other'; b.disabled = true;
+    grid.appendChild(b);
+  }
+  for (let d = 1; d <= daysInMonth; d++){
+    const dt = new Date(viewYear, viewMonth, d);
+    const k = keyOf(dt);
+    const b = document.createElement('button');
+    b.className = 'day';
+    b.type = 'button';
+    const num = document.createElement('span'); num.textContent = d;
+    const mk = document.createElement('span'); mk.className = 'mk';
+    const entry = days[k];
+    if (entry && entry.status === 'free'){ b.classList.add('free'); mk.textContent = '✓'; }
+    else if (entry && entry.status === 'slip'){ b.classList.add('slip'); mk.textContent = '•'; }
+    if (k === tk) b.classList.add('today');
+    if (k > tk){ b.disabled = true; }
+    else {
+      b.addEventListener('click', () => openDayModal(k));
+      b.setAttribute('aria-label', humanDate(k) + (entry ? (entry.status === 'free' ? ', godtefri' : ', sprekk') : ''));
+    }
+    b.append(num, mk);
+    grid.appendChild(b);
+  }
+}
+
+/* ---------- storage: Supabase (cloud) with localStorage fallback ---------- */
+function saveLocal(){
+  try { localStorage.setItem(LS_KEY, JSON.stringify(days)); } catch(e){}
+}
+function switchToLocal(){
+  if (mode === 'local') return;
+  mode = 'local';
+  saveLocal();
+  $('storageNote').hidden = false;
+}
+function persist(k, status){
+  if (mode === 'cloud' && sb && session){
+    const q = status
+      ? sb.from('days').upsert({ user_id: session.user.id, day: k, status: status })
+      : sb.from('days').delete().eq('user_id', session.user.id).eq('day', k);
+    q.then(res => {
+      if (res.error){ showToast('Kunne ikke lagre i skyen — prøver lokalt'); switchToLocal(); }
+    });
+  } else if (mode === 'local'){
+    saveLocal();
+  } else {
+    pendingWrites.push([k, status]);
+  }
+}
+function setDay(k, status){
+  if (status) days[k] = {status: status, ts: Date.now()};
+  else delete days[k];
+  render();
+  persist(k, status);
+}
+function startLocal(){
+  mode = 'local';
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    if (raw){
+      const stored = JSON.parse(raw);
+      days = Object.assign({}, stored, days);
+    }
+  } catch(e){}
+  for (const [k, st] of pendingWrites){ if (st) days[k] = {status: st, ts: Date.now()}; else delete days[k]; }
+  pendingWrites = [];
+  saveLocal();
+  $('storageNote').hidden = false;
+  render();
+}
+
+async function loadCloud(){
+  const res = await sb.from('days').select('day,status');
+  if (res.error){ showToast('Kunne ikke hente data — bruker lokal lagring'); startLocal(); return; }
+  const next = {};
+  for (const row of res.data){
+    if (row.status === 'free' || row.status === 'slip') next[row.day] = {status: row.status};
+  }
+  // one-time import of anything logged locally before first sign-in
+  let imported = 0;
+  if (res.data.length === 0){
+    try {
+      const raw = localStorage.getItem(LS_KEY);
+      if (raw){
+        const stored = JSON.parse(raw);
+        const rows = Object.keys(stored)
+          .filter(k => stored[k] && (stored[k].status === 'free' || stored[k].status === 'slip'))
+          .map(k => ({ user_id: session.user.id, day: k, status: stored[k].status }));
+        if (rows.length){
+          const up = await sb.from('days').upsert(rows);
+          if (!up.error){
+            for (const r of rows) next[r.day] = {status: r.status};
+            imported = rows.length;
+            try { localStorage.removeItem(LS_KEY); } catch(e){}
+          }
+        }
+      }
+    } catch(e){}
+  }
+  days = next;
+  mode = 'cloud';
+  $('storageNote').hidden = true;
+  const flush = pendingWrites; pendingWrites = [];
+  for (const [k, st] of flush){
+    if (st) days[k] = {status: st, ts: Date.now()}; else delete days[k];
+    persist(k, st);
+  }
+  render();
+  if (imported) showToast('Flyttet ' + imported + ' lokale registreringer til kontoen din');
+}
+
+function onAuthChange(){
+  if (session){
+    $('loginCard').hidden = true;
+    $('accountLine').hidden = false;
+    $('accountEmail').textContent = 'Innlogget som ' + (session.user.email || '');
+    loadCloud();
+  } else {
+    $('accountLine').hidden = true;
+    $('loginCard').hidden = false;
+    startLocal();
+  }
+}
+
+function initStore(){
+  const configured = SUPABASE_URL.indexOf('https://') === 0 && SUPABASE_ANON_KEY.indexOf('LIM_INN') !== 0;
+  if (!configured || !window.supabase){
+    $('storageNote').textContent = 'Supabase er ikke konfigurert — lagres kun i denne nettleseren.';
+    startLocal();
+    return;
+  }
+  sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  sb.auth.onAuthStateChange((event, s) => {
+    const had = !!session;
+    session = s;
+    if (event === 'INITIAL_SESSION' || (!!s) !== had) onAuthChange();
+  });
+}
+
+function showLoginMsg(text, isError){
+  const el = $('loginMsg');
+  el.textContent = text;
+  el.classList.toggle('err', !!isError);
+  el.hidden = false;
+}
+$('btnSendLink').addEventListener('click', async () => {
+  const email = $('emailInput').value.trim();
+  if (!email || email.indexOf('@') < 1){ showLoginMsg('Skriv inn en gyldig e-postadresse.', true); return; }
+  $('btnSendLink').disabled = true;
+  const res = await sb.auth.signInWithOtp({
+    email: email,
+    options: { emailRedirectTo: location.href.split('#')[0].split('?')[0] }
+  });
+  $('btnSendLink').disabled = false;
+  if (res.error) showLoginMsg('Noe gikk galt: ' + res.error.message, true);
+  else showLoginMsg('Sjekk e-posten din og klikk på innloggingslenken! 📬', false);
+});
+$('emailInput').addEventListener('keydown', e => { if (e.key === 'Enter') $('btnSendLink').click(); });
+$('btnLocalOnly').addEventListener('click', () => { $('loginCard').hidden = true; startLocal(); });
+$('btnLogout').addEventListener('click', async () => {
+  if (sb) await sb.auth.signOut();
+  days = {};
+  render();
+});
+
+/* ---------- celebration ---------- */
+let toastTimer = null;
+function showToast(msg){
+  const t = $('toast');
+  t.textContent = msg;
+  t.hidden = false;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { t.hidden = true; }, 3200);
+}
+function confetti(){
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const c = $('confettiCanvas');
+  const ctx = c.getContext('2d');
+  c.hidden = false;
+  c.width = innerWidth; c.height = innerHeight;
+  const colors = ['#2f9e63','#e9a23b','#6fc9ff','#f06292','#9c7bd8','#4cc488'];
+  const parts = [];
+  for (let i = 0; i < 90; i++){
+    parts.push({
+      x: innerWidth/2 + (Math.random()-.5)*160,
+      y: innerHeight*0.38,
+      vx: (Math.random()-.5)*9,
+      vy: -5 - Math.random()*7,
+      s: 5 + Math.random()*5,
+      r: Math.random()*Math.PI,
+      vr: (Math.random()-.5)*.3,
+      col: colors[i % colors.length]
+    });
+  }
+  const t0 = performance.now();
+  (function frame(t){
+    const el = t - t0;
+    ctx.clearRect(0,0,c.width,c.height);
+    for (const p of parts){
+      p.x += p.vx; p.y += p.vy; p.vy += .28; p.r += p.vr;
+      ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.r);
+      ctx.fillStyle = p.col;
+      ctx.fillRect(-p.s/2, -p.s/2, p.s, p.s*0.6);
+      ctx.restore();
+    }
+    if (el < 1800) requestAnimationFrame(frame);
+    else { ctx.clearRect(0,0,c.width,c.height); c.hidden = true; }
+  })(t0);
+}
+function badgeDiff(before, after){
+  const fresh = [];
+  for (const id of after) if (!before.has(id)) fresh.push(BADGES.find(b => b.id === id));
+  return fresh;
+}
+
+/* ---------- interactions ---------- */
+function registerDay(k, status){
+  const before = unlockedBadges(computeStats());
+  setDay(k, status);
+  const after = unlockedBadges(computeStats());
+  const fresh = badgeDiff(before, after);
+  if (status === 'free'){
+    confetti();
+    const s = computeStats();
+    let msg = '+' + XP_FREE + ' XP! 🎉';
+    if (fresh.length) msg = 'Nytt merke: ' + fresh[0].em + ' ' + fresh[0].nm + '!';
+    else if (k === todayKey() && s.currentStreak > 1) msg = '+' + XP_FREE + ' XP — ' + s.currentStreak + ' dager på rad! 🔥';
+    showToast(msg);
+  } else if (status === 'slip'){
+    $('slipMsg').textContent = SLIP_MESSAGES[Math.floor(Math.random()*SLIP_MESSAGES.length)];
+    $('slipModal').hidden = false;
+    $('slipOk').focus();
+    if (fresh.length) showToast('Nytt merke: ' + fresh[0].em + ' ' + fresh[0].nm);
+  }
+}
+
+$('btnFree').addEventListener('click', () => registerDay(todayKey(), 'free'));
+$('btnSlip').addEventListener('click', () => registerDay(todayKey(), 'slip'));
+$('slipOk').addEventListener('click', () => { $('slipModal').hidden = true; });
+$('slipModal').addEventListener('click', e => { if (e.target === $('slipModal')) $('slipModal').hidden = true; });
+
+let modalDay = null;
+function openDayModal(k){
+  modalDay = k;
+  $('dayModalTitle').textContent = humanDate(k);
+  $('dmClear').hidden = !days[k];
+  $('dayModal').hidden = false;
+  $('dmFree').focus();
+}
+function closeDayModal(){ $('dayModal').hidden = true; modalDay = null; }
+$('dmFree').addEventListener('click', () => { const k = modalDay; closeDayModal(); registerDay(k, 'free'); });
+$('dmSlip').addEventListener('click', () => { const k = modalDay; closeDayModal(); registerDay(k, 'slip'); });
+$('dmClear').addEventListener('click', () => { const k = modalDay; closeDayModal(); setDay(k, null); showToast('Registrering fjernet'); });
+$('dmCancel').addEventListener('click', closeDayModal);
+$('dayModal').addEventListener('click', e => { if (e.target === $('dayModal')) closeDayModal(); });
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape'){ closeDayModal(); $('slipModal').hidden = true; }
+});
+
+$('calPrev').addEventListener('click', () => {
+  viewMonth--; if (viewMonth < 0){ viewMonth = 11; viewYear--; }
+  renderCalendar();
+});
+$('calNext').addEventListener('click', () => {
+  viewMonth++; if (viewMonth > 11){ viewMonth = 0; viewYear++; }
+  renderCalendar();
+});
+
+render();
+initStore();
+})();
+</script>
+</body>
+</html>
