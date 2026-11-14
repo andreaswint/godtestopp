@@ -1,54 +1,31 @@
-# Godtestopp — selvhostet med Supabase-synk
+# Godtestopp
 
-Én HTML-fil du legger på din egen nettside. Hver bruker logger inn med e-post
-(innloggingslenke, ingen passord) og får sin egen private logg som synkroniseres
-mellom alle enheter.
+Gamifisert tracker for godtefrie dager — streaks, XP, nivåer, merker og
+skamfri registrering av sprekker. Norsk, mobilvennlig, én HTML-fil.
 
-## Status
+**Live:** https://godtestopp.andreaswinther.no
+(GitHub Pages fra dette repoet, `index.html` på `main`; CNAME-post hos one.com)
 
-Dette er allerede gjort (oktober 2026):
+## Slik fungerer den
 
-- ✅ Supabase-prosjektet `godtestopp` er opprettet i organisasjonen TIBE
-  (EU-region) — prosjekt-URL `https://uhjphrkerasveybgonyv.supabase.co`
-- ✅ Databasetabellen og Row Level Security er satt opp (`supabase-setup.sql`
-  er kjørt)
-- ✅ Prosjekt-URL og publishable-nøkkel er limt inn i `godtestopp.html`
+- Trykk «I dag var godtefri» for å registrere dagen (+10 XP, konfetti)
+- «Jeg sprakk i dag» logges uten skam — og gir +2 XP for ærlighet
+- Kalenderen lar deg registrere eller rette dager bakover i tid
+- Streak-ring mot neste milepæl, nivåer fra «Nysgjerrig» til «Legende»,
+  og ni merker å låse opp
 
-Og hosting:
+## Lagring
 
-- ✅ Appen er live på **https://godtestopp.andreaswinther.no** via GitHub
-  Pages (dette repoet, `index.html` på `main`)
-- ✅ CNAME-post hos one.com: `godtestopp` → `andreaswint.github.io`
-- ✅ Site URL i Supabase: `https://godtestopp.andreaswinther.no`
+Loggen lagres **lokalt i nettleseren** (localStorage) på hver enhet —
+helt privat, ingen konto eller innlogging. Det betyr også at loggen ikke
+synkroniseres mellom enheter, og at den forsvinner hvis nettleserdata
+slettes. Hver person bruker appen på sin egen enhet.
 
-## Gjenstår
+> Tidligere brukte appen Supabase med e-postinnlogging og synkronisering;
+> det ble fjernet 14. nov 2026 for å slippe en ekstern tjeneste.
 
-- Når GitHub har utstedt HTTPS-sertifikatet (15–60 min etter oppsett),
-  huk av **Enforce HTTPS** under repoets Settings → Pages
-- Supabase sender maks ca. 2 innloggingse-poster i timen med innebygd
-  utsending — be familien logge inn litt spredt, eller koble til egen SMTP
-  under Authentication → Emails
+## Endre appen
 
-> Nøkkelen i HTML-fila er en «publishable key» — laget for å være offentlig.
-> Row Level Security i databasen sørger for at hver bruker kun får tilgang
-> til sine egne rader.
-
-## Slik fungerer det
-
-- **Innlogging:** brukeren skriver inn e-post og får en innloggingslenke.
-  Nye brukere opprettes automatisk første gang.
-- **Uten innlogging:** appen fungerer fortsatt, men lagrer kun lokalt i
-  nettleseren («fortsett uten konto»).
-- **Automatisk import:** har noen brukt appen lokalt før de logget inn,
-  flyttes registreringene til kontoen deres ved første innlogging.
-- **Personvern:** ingen ser andres registreringer — hverken sprekker eller
-  streaks. Håndhevet av databasen, ikke bare av appen.
-
-## Verdt å vite
-
-- Supabase sin innebygde e-postutsending er begrenset (noen få e-poster i
-  timen) — mer enn nok for familie og venner. For mange brukere: koble til
-  egen SMTP under **Authentication → Emails**.
-- Gratisnivået i Supabase pauser prosjekter etter en ukes inaktivitet uten
-  trafikk; de våkner igjen ved bruk, men kan da svare tregt første gang.
-  Appen faller i så fall tilbake til lokal lagring til skyen svarer.
+Rediger `index.html` og push til `main` — GitHub Pages redeployer
+automatisk i løpet av et minutt eller to. (`godtestopp.html` er en kopi
+av samme fil; `supabase-setup.sql` er kun historikk.)

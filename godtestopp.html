@@ -69,32 +69,6 @@ h2{
 .muted{color:var(--muted)}
 button{font-family:inherit}
 
-/* Login / sync card */
-.login h2{margin-bottom:4px}
-.login p{margin:0 0 12px; font-size:.9rem; color:var(--muted)}
-.field{display:flex; gap:8px; flex-wrap:wrap}
-.field input{
-  flex:1; min-width:0; border:2px solid var(--line); border-radius:999px;
-  padding:11px 16px; font-family:inherit; font-size:1rem;
-  background:var(--surface); color:var(--ink);
-}
-.field input:focus-visible{outline:none; border-color:var(--accent)}
-.login .localline{margin:12px 0 0; font-size:.85rem}
-.login .localline button{
-  background:none; border:none; padding:0; color:var(--muted);
-  text-decoration:underline; cursor:pointer; font-size:.85rem;
-}
-.login-msg{margin:10px 0 0 !important; font-weight:700; color:var(--accent) !important}
-.login-msg.err{color:var(--slip) !important}
-.account-line{
-  display:flex; justify-content:center; align-items:center; gap:10px;
-  font-size:.8rem; color:var(--muted); flex-wrap:wrap; text-align:center;
-}
-.account-line button{
-  background:none; border:none; padding:0; color:var(--muted);
-  text-decoration:underline; cursor:pointer; font-size:.8rem;
-}
-
 /* Hero: streak ring + today's actions */
 .hero{display:flex; flex-direction:column; align-items:center; gap:14px; padding-block:26px}
 .ring-wrap{position:relative; width:190px; height:190px}
@@ -234,17 +208,6 @@ button{font-family:inherit}
     <p class="tagline">Små seire, én dag om gangen</p>
   </header>
 
-  <section class="card login" id="loginCard" hidden>
-    <h2>Logg inn for å synkronisere</h2>
-    <p>Skriv inn e-posten din, så får du en innloggingslenke. Ingen passord — og loggen din er helt privat.</p>
-    <div class="field">
-      <input type="email" id="emailInput" placeholder="din@epost.no" autocomplete="email" inputmode="email">
-      <button class="btn btn-free" id="btnSendLink">Send lenke</button>
-    </div>
-    <p class="login-msg" id="loginMsg" hidden></p>
-    <p class="localline">…eller <button type="button" id="btnLocalOnly">fortsett uten konto</button> (lagres kun i denne nettleseren)</p>
-  </section>
-
   <section class="card hero" aria-label="Dagens status">
     <div class="ring-wrap">
       <svg viewBox="0 0 190 190" aria-hidden="true">
@@ -301,11 +264,7 @@ button{font-family:inherit}
     </div>
   </section>
 
-  <p id="storageNote" class="muted" hidden>Lagres kun i denne nettleseren akkurat nå.</p>
-  <div class="account-line" id="accountLine" hidden>
-    <span id="accountEmail"></span>
-    <button type="button" id="btnLogout">Logg ut</button>
-  </div>
+  <p id="storageNote" class="muted">Loggen lagres lokalt på denne enheten — helt privat.</p>
 </div>
 
 <div class="overlay" id="dayModal" hidden>
@@ -335,20 +294,9 @@ button{font-family:inherit}
 <div id="toast" hidden></div>
 <canvas id="confettiCanvas" hidden></canvas>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.50.0/dist/umd/supabase.js"></script>
 <script>
 (function(){
 "use strict";
-
-/* ====================================================================
-   KONFIGURASJON — lim inn verdiene fra ditt Supabase-prosjekt her.
-   Du finner dem under Project Settings → API i Supabase-dashbordet.
-   (Anon-nøkkelen er laget for å være offentlig; Row Level Security
-   beskytter dataene.)
-==================================================================== */
-const SUPABASE_URL = 'https://uhjphrkerasveybgonyv.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_RyHi0ZF2tCyRS5fuzGkzbQ_bqF7uEQE';
-/* ==================================================================== */
 
 const $ = id => document.getElementById(id);
 
@@ -368,10 +316,6 @@ function humanDate(k){
 
 /* ---------- state ---------- */
 let days = {};            // "YYYY-MM-DD" -> {status:"free"|"slip"}
-let mode = 'loading';     // 'loading' | 'cloud' | 'local'
-let sb = null;            // Supabase client
-let session = null;
-let pendingWrites = [];   // [dateKey, status|null] queued before storage resolves
 let viewYear, viewMonth;
 { const n = new Date(); viewYear = n.getFullYear(); viewMonth = n.getMonth(); }
 const LS_KEY = 'godtestopp.days.v1';
@@ -570,145 +514,23 @@ function renderCalendar(){
   }
 }
 
-/* ---------- storage: Supabase (cloud) with localStorage fallback ---------- */
+/* ---------- storage: localStorage ---------- */
 function saveLocal(){
   try { localStorage.setItem(LS_KEY, JSON.stringify(days)); } catch(e){}
-}
-function switchToLocal(){
-  if (mode === 'local') return;
-  mode = 'local';
-  saveLocal();
-  $('storageNote').hidden = false;
-}
-function persist(k, status){
-  if (mode === 'cloud' && sb && session){
-    const q = status
-      ? sb.from('days').upsert({ user_id: session.user.id, day: k, status: status })
-      : sb.from('days').delete().eq('user_id', session.user.id).eq('day', k);
-    q.then(res => {
-      if (res.error){ showToast('Kunne ikke lagre i skyen — prøver lokalt'); switchToLocal(); }
-    });
-  } else if (mode === 'local'){
-    saveLocal();
-  } else {
-    pendingWrites.push([k, status]);
-  }
 }
 function setDay(k, status){
   if (status) days[k] = {status: status, ts: Date.now()};
   else delete days[k];
   render();
-  persist(k, status);
+  saveLocal();
 }
-function startLocal(){
-  mode = 'local';
+function initStore(){
   try {
     const raw = localStorage.getItem(LS_KEY);
-    if (raw){
-      const stored = JSON.parse(raw);
-      days = Object.assign({}, stored, days);
-    }
+    if (raw) days = JSON.parse(raw) || {};
   } catch(e){}
-  for (const [k, st] of pendingWrites){ if (st) days[k] = {status: st, ts: Date.now()}; else delete days[k]; }
-  pendingWrites = [];
-  saveLocal();
-  $('storageNote').hidden = false;
   render();
 }
-
-async function loadCloud(){
-  const res = await sb.from('days').select('day,status');
-  if (res.error){ showToast('Kunne ikke hente data — bruker lokal lagring'); startLocal(); return; }
-  const next = {};
-  for (const row of res.data){
-    if (row.status === 'free' || row.status === 'slip') next[row.day] = {status: row.status};
-  }
-  // one-time import of anything logged locally before first sign-in
-  let imported = 0;
-  if (res.data.length === 0){
-    try {
-      const raw = localStorage.getItem(LS_KEY);
-      if (raw){
-        const stored = JSON.parse(raw);
-        const rows = Object.keys(stored)
-          .filter(k => stored[k] && (stored[k].status === 'free' || stored[k].status === 'slip'))
-          .map(k => ({ user_id: session.user.id, day: k, status: stored[k].status }));
-        if (rows.length){
-          const up = await sb.from('days').upsert(rows);
-          if (!up.error){
-            for (const r of rows) next[r.day] = {status: r.status};
-            imported = rows.length;
-            try { localStorage.removeItem(LS_KEY); } catch(e){}
-          }
-        }
-      }
-    } catch(e){}
-  }
-  days = next;
-  mode = 'cloud';
-  $('storageNote').hidden = true;
-  const flush = pendingWrites; pendingWrites = [];
-  for (const [k, st] of flush){
-    if (st) days[k] = {status: st, ts: Date.now()}; else delete days[k];
-    persist(k, st);
-  }
-  render();
-  if (imported) showToast('Flyttet ' + imported + ' lokale registreringer til kontoen din');
-}
-
-function onAuthChange(){
-  if (session){
-    $('loginCard').hidden = true;
-    $('accountLine').hidden = false;
-    $('accountEmail').textContent = 'Innlogget som ' + (session.user.email || '');
-    loadCloud();
-  } else {
-    $('accountLine').hidden = true;
-    $('loginCard').hidden = false;
-    startLocal();
-  }
-}
-
-function initStore(){
-  const configured = SUPABASE_URL.indexOf('https://') === 0 && SUPABASE_ANON_KEY.indexOf('LIM_INN') !== 0;
-  if (!configured || !window.supabase){
-    $('storageNote').textContent = 'Supabase er ikke konfigurert — lagres kun i denne nettleseren.';
-    startLocal();
-    return;
-  }
-  sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-  sb.auth.onAuthStateChange((event, s) => {
-    const had = !!session;
-    session = s;
-    if (event === 'INITIAL_SESSION' || (!!s) !== had) onAuthChange();
-  });
-}
-
-function showLoginMsg(text, isError){
-  const el = $('loginMsg');
-  el.textContent = text;
-  el.classList.toggle('err', !!isError);
-  el.hidden = false;
-}
-$('btnSendLink').addEventListener('click', async () => {
-  const email = $('emailInput').value.trim();
-  if (!email || email.indexOf('@') < 1){ showLoginMsg('Skriv inn en gyldig e-postadresse.', true); return; }
-  $('btnSendLink').disabled = true;
-  const res = await sb.auth.signInWithOtp({
-    email: email,
-    options: { emailRedirectTo: location.href.split('#')[0].split('?')[0] }
-  });
-  $('btnSendLink').disabled = false;
-  if (res.error) showLoginMsg('Noe gikk galt: ' + res.error.message, true);
-  else showLoginMsg('Sjekk e-posten din og klikk på innloggingslenken! 📬', false);
-});
-$('emailInput').addEventListener('keydown', e => { if (e.key === 'Enter') $('btnSendLink').click(); });
-$('btnLocalOnly').addEventListener('click', () => { $('loginCard').hidden = true; startLocal(); });
-$('btnLogout').addEventListener('click', async () => {
-  if (sb) await sb.auth.signOut();
-  days = {};
-  render();
-});
 
 /* ---------- celebration ---------- */
 let toastTimer = null;
